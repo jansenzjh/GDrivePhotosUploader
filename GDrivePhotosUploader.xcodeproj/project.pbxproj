@@ -31,6 +31,7 @@
 		9AD8B09F2F9CEC8D00B32CCF /* GDrivePhotosUploader.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GDrivePhotosUploader.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9AD8B0AC2F9CEC8D00B32CCF /* GDrivePhotosUploaderTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GDrivePhotosUploaderTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9AD8B0B62F9CEC8D00B32CCF /* GDrivePhotosUploaderUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GDrivePhotosUploaderUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9AD8B0CC2F9D200000B32CCF /* BaseConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BaseConfig.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -83,6 +84,7 @@
 				9AD8B0A12F9CEC8D00B32CCF /* GDrivePhotosUploader */,
 				9AD8B0AF2F9CEC8D00B32CCF /* GDrivePhotosUploaderTests */,
 				9AD8B0B92F9CEC8D00B32CCF /* GDrivePhotosUploaderUITests */,
+				9AD8B0CD2F9D200000B32CCF /* Config */,
 				9AD8B0A02F9CEC8D00B32CCF /* Products */,
 			);
 			sourceTree = "<group>";
@@ -95,6 +97,14 @@
 				9AD8B0B62F9CEC8D00B32CCF /* GDrivePhotosUploaderUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		9AD8B0CD2F9D200000B32CCF /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				9AD8B0CC2F9D200000B32CCF /* BaseConfig.xcconfig */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -396,6 +406,7 @@
 		};
 		9AD8B0C12F9CEC8D00B32CCF /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9AD8B0CC2F9D200000B32CCF /* BaseConfig.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -422,7 +433,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.GDrivePhotosUploader;
+				PRODUCT_BUNDLE_IDENTIFIER = com.JZSoft.GDrivePhotosUploader;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = iphoneos;
@@ -439,6 +450,7 @@
 		};
 		9AD8B0C22F9CEC8D00B32CCF /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9AD8B0CC2F9D200000B32CCF /* BaseConfig.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -465,7 +477,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.GDrivePhotosUploader;
+				PRODUCT_BUNDLE_IDENTIFIER = com.JZSoft.GDrivePhotosUploader;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = iphoneos;

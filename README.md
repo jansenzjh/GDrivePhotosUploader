@@ -58,13 +58,22 @@ com.example.GDrivePhotosUploader
 
 ## App Configuration
 
-Before running, update:
+Before running, create your local ignored config file:
 
-- `GDrivePhotosUploader/Utilities/AppConfiguration.swift`
-  - Replace `PASTE_GOOGLE_IOS_CLIENT_ID_HERE` with the Google iOS client ID.
-- `Config/Info.plist`
-  - Replace `PASTE_GOOGLE_IOS_CLIENT_ID_HERE` with the same Google iOS client ID.
-  - Replace `PASTE_REVERSED_GOOGLE_CLIENT_ID_HERE` with the URL scheme from the Google iOS OAuth client.
+```bash
+cp Config/LocalConfig.template.xcconfig Config/LocalConfig.xcconfig
+```
+
+Then edit `Config/LocalConfig.xcconfig`:
+
+```text
+GOOGLE_IOS_CLIENT_ID = your-ios-client-id.apps.googleusercontent.com
+GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.your-reversed-client-id
+```
+
+The app reads `GIDClientID` from the processed `Info.plist`, and `Info.plist` gets that value from `LocalConfig.xcconfig`. You should not need to edit Swift source files for local credentials.
+
+The project references committed `Config/BaseConfig.xcconfig`, which contains safe placeholders and optionally includes ignored `Config/LocalConfig.xcconfig`. Your local Google values override the placeholders without touching tracked files.
 
 Do not commit real credentials if you later publish this repository. The OAuth client ID is not a secret, but keeping personal configuration out of public repos is still cleaner.
 

@@ -5,3 +5,4 @@ DerivedData/
 *.xccheckout
 xcuserdata/
 *.moved-aside
+Config/LocalConfig.xcconfig

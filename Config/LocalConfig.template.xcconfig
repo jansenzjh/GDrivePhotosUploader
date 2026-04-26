@@ -1,0 +1,5 @@
+// Copy this file to Config/LocalConfig.xcconfig and fill in your local values.
+// Config/LocalConfig.xcconfig is ignored by Git.
+
+GOOGLE_IOS_CLIENT_ID = PASTE_GOOGLE_IOS_CLIENT_ID_HERE
+GOOGLE_REVERSED_CLIENT_ID = PASTE_REVERSED_GOOGLE_CLIENT_ID_HERE
