@@ -2,9 +2,6 @@
 //  GDrivePhotosUploaderTests.swift
 //  GDrivePhotosUploaderTests
 //
-//  Created by Jianheng Zhang on 4/25/26.
-//
-
 import XCTest
 
 final class GDrivePhotosUploaderTests: XCTestCase {
