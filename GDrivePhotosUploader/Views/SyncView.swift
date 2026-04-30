@@ -16,6 +16,7 @@ struct SyncView: View {
             statusSection
             controls
             summarySection
+            threadProgressSection
             errorSection
         }
         .cardStyle()
@@ -89,6 +90,7 @@ struct SyncView: View {
         VStack(alignment: .leading, spacing: 8) {
             LabeledContent("Status", value: syncManager.phase.title)
             LabeledContent("Progress", value: "\(syncManager.uploadedCount) / \(syncManager.uploadTotalCount) uploaded")
+            LabeledContent("Upload Threads", value: "\(syncManager.threadProgress.count)")
 
             if let currentFilename = syncManager.currentFilename {
                 LabeledContent("Current File") {
@@ -99,6 +101,36 @@ struct SyncView: View {
             }
 
             ProgressView(value: Double(syncManager.uploadedCount), total: Double(max(syncManager.uploadTotalCount, 1)))
+        }
+    }
+
+    @ViewBuilder
+    private var threadProgressSection: some View {
+        if !syncManager.threadProgress.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Thread Progress")
+                    .font(.headline)
+
+                ForEach(syncManager.threadProgress) { thread in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(thread.title)
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Text("\(thread.completedCount) files")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Text(thread.detail)
+                            .font(.caption)
+                            .foregroundStyle(thread.status == .failed ? .red : .secondary)
+                            .lineLimit(1)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
         }
     }
 

@@ -19,6 +19,13 @@ enum AppLogger {
         return directory.appendingPathComponent("app.log")
     }
 
+    static var reviewLogFileURL: URL {
+        let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("GDrivePhotosUploader", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory.appendingPathComponent("warnings-errors.log")
+    }
+
     static func info(_ message: String) {
         logger.info("\(message, privacy: .public)")
         append(level: "INFO", message: message)
@@ -43,11 +50,11 @@ enum AppLogger {
         lock.lock()
         defer { lock.unlock() }
 
-        guard let data = try? Data(contentsOf: logFileURL), let text = String(data: data, encoding: .utf8) else {
-            return "No logs yet."
+        guard let data = try? Data(contentsOf: reviewLogFileURL), let text = String(data: data, encoding: .utf8) else {
+            return "No warnings or errors yet."
         }
 
-        return text.isEmpty ? "No logs yet." : text
+        return text.isEmpty ? "No warnings or errors yet." : text
     }
 
     static func clearLog() {
@@ -55,6 +62,7 @@ enum AppLogger {
         defer { lock.unlock() }
 
         try? Data().write(to: logFileURL, options: [.atomic])
+        try? Data().write(to: reviewLogFileURL, options: [.atomic])
     }
 
     private static func append(level: String, message: String) {
@@ -66,7 +74,14 @@ enum AppLogger {
             return
         }
 
-        let url = logFileURL
+        append(data, to: logFileURL)
+
+        if level == "WARN" || level == "ERROR" {
+            append(data, to: reviewLogFileURL)
+        }
+    }
+
+    private static func append(_ data: Data, to url: URL) {
         if FileManager.default.fileExists(atPath: url.path), let handle = try? FileHandle(forWritingTo: url) {
             defer { try? handle.close() }
             try? handle.seekToEnd()

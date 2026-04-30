@@ -2,11 +2,16 @@ import Foundation
 
 final class GoogleDriveService {
     private let session: URLSession
+    private let rateLimiter: GoogleDriveRateLimiter
     private let baseFilesURL = URL(string: "https://www.googleapis.com/drive/v3/files")!
     private let uploadFilesURL = URL(string: "https://www.googleapis.com/upload/drive/v3/files")!
 
-    init(session: URLSession = .shared) {
+    init(
+        session: URLSession = .shared,
+        rateLimiter: GoogleDriveRateLimiter = GoogleDriveRateLimiter(maxRequestsPerSecond: AppConfiguration.driveMaxRequestsPerSecond)
+    ) {
         self.session = session
+        self.rateLimiter = rateLimiter
     }
 
     func findOrCreateFolderPath(
@@ -148,13 +153,17 @@ final class GoogleDriveService {
         startRequest.setValue("\(size)", forHTTPHeaderField: "X-Upload-Content-Length")
         startRequest.httpBody = try JSONEncoder().encode(metadata)
 
-        let (_, startResponse) = try await session.data(for: startRequest)
+        let (_, startResponse) = try await data(for: startRequest)
         guard let httpResponse = startResponse as? HTTPURLResponse else {
             throw GoogleDriveError.invalidResponse
         }
 
         guard (200..<300).contains(httpResponse.statusCode), let uploadURL = httpResponse.value(forHTTPHeaderField: "Location").flatMap(URL.init(string:)) else {
-            throw GoogleDriveError.httpStatus(httpResponse.statusCode, "Failed to start resumable upload.")
+            throw GoogleDriveError.httpStatus(
+                httpResponse.statusCode,
+                "Failed to start resumable upload.",
+                retryAfter: httpResponse.retryAfterDelay
+            )
         }
 
         var uploadRequest = URLRequest(url: uploadURL)
@@ -168,20 +177,54 @@ final class GoogleDriveService {
     }
 
     private func send<T: Decodable>(_ request: URLRequest) async throws -> T {
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw GoogleDriveError.invalidResponse
         }
 
         guard (200..<300).contains(httpResponse.statusCode) else {
             let message = String(data: data, encoding: .utf8) ?? HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode)
-            throw GoogleDriveError.httpStatus(httpResponse.statusCode, message)
+            throw GoogleDriveError.httpStatus(httpResponse.statusCode, message, retryAfter: httpResponse.retryAfterDelay)
         }
 
         do {
             return try JSONDecoder().decode(T.self, from: data)
         } catch {
             throw GoogleDriveError.decodingFailed(error)
+        }
+    }
+
+    private func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        try await rateLimiter.waitForTurn()
+        return try await session.data(for: request)
+    }
+}
+
+actor GoogleDriveRateLimiter {
+    private let maxRequestsPerSecond: Int
+    private var requestDates: [Date] = []
+    private let window: TimeInterval = 1
+
+    init(maxRequestsPerSecond: Int) {
+        self.maxRequestsPerSecond = max(1, maxRequestsPerSecond)
+    }
+
+    func waitForTurn() async throws {
+        while true {
+            let now = Date()
+            requestDates.removeAll { now.timeIntervalSince($0) >= window }
+
+            if requestDates.count < maxRequestsPerSecond {
+                requestDates.append(now)
+                return
+            }
+
+            guard let oldestRequestDate = requestDates.first else {
+                continue
+            }
+
+            let waitTime = max(0.05, window - now.timeIntervalSince(oldestRequestDate))
+            try await Task.sleep(nanoseconds: UInt64(waitTime * 1_000_000_000))
         }
     }
 }
@@ -204,14 +247,14 @@ private struct DriveFileMetadata: Encodable {
 
 enum GoogleDriveError: LocalizedError, Equatable {
     case invalidResponse
-    case httpStatus(Int, String)
+    case httpStatus(Int, String, retryAfter: TimeInterval?)
     case decodingFailed(Error)
 
     static func == (lhs: GoogleDriveError, rhs: GoogleDriveError) -> Bool {
         switch (lhs, rhs) {
         case (.invalidResponse, .invalidResponse):
             true
-        case let (.httpStatus(lhsCode, _), .httpStatus(rhsCode, _)):
+        case let (.httpStatus(lhsCode, _, _), .httpStatus(rhsCode, _, _)):
             lhsCode == rhsCode
         case (.decodingFailed, .decodingFailed):
             true
@@ -224,7 +267,7 @@ enum GoogleDriveError: LocalizedError, Equatable {
         switch self {
         case .invalidResponse:
             "Google Drive returned an invalid response."
-        case let .httpStatus(statusCode, message):
+        case let .httpStatus(statusCode, message, _):
             "Google Drive error \(statusCode): \(message)"
         case let .decodingFailed(error):
             "Failed to decode Google Drive response: \(error.localizedDescription)"
@@ -233,11 +276,43 @@ enum GoogleDriveError: LocalizedError, Equatable {
 
     var isRetryable: Bool {
         switch self {
-        case let .httpStatus(statusCode, _):
+        case let .httpStatus(statusCode, _, _):
             return statusCode == 408 || statusCode == 429 || (500...599).contains(statusCode)
         case .invalidResponse, .decodingFailed:
             return false
         }
+    }
+
+    var retryAfterDelay: TimeInterval? {
+        switch self {
+        case let .httpStatus(_, _, retryAfter):
+            retryAfter
+        case .invalidResponse, .decodingFailed:
+            nil
+        }
+    }
+}
+
+private extension HTTPURLResponse {
+    var retryAfterDelay: TimeInterval? {
+        guard let retryAfter = value(forHTTPHeaderField: "Retry-After") else {
+            return nil
+        }
+
+        if let seconds = TimeInterval(retryAfter) {
+            return seconds
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "EEE',' dd MMM yyyy HH':'mm':'ss z"
+
+        guard let date = formatter.date(from: retryAfter) else {
+            return nil
+        }
+
+        return max(0, date.timeIntervalSinceNow)
     }
 }
 

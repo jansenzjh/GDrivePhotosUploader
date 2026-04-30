@@ -3,7 +3,6 @@ import UIKit
 
 struct LogViewerView: View {
     @State private var logText = ""
-    @State private var isShowingClearConfirmation = false
     @State private var copyStatus: String?
 
     var body: some View {
@@ -26,7 +25,7 @@ struct LogViewerView: View {
                     .padding()
             }
         }
-        .navigationTitle("App Log")
+        .navigationTitle("Warnings & Errors")
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 Button("Refresh") {
@@ -36,26 +35,7 @@ struct LogViewerView: View {
                 Button("Copy") {
                     copyLog()
                 }
-
-                Button("Clear", role: .destructive) {
-                    isShowingClearConfirmation = true
-                }
             }
-        }
-        .confirmationDialog(
-            "Clear app log?",
-            isPresented: $isShowingClearConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Clear Log", role: .destructive) {
-                AppLogger.clearLog()
-                loadLog()
-                copyStatus = "Log cleared."
-            }
-
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This deletes the local log text. It does not affect uploaded photos or sync records.")
         }
         .onAppear {
             loadLog()

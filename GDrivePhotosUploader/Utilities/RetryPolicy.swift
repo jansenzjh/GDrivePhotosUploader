@@ -20,7 +20,10 @@ struct RetryPolicy: Sendable {
                     throw error
                 }
 
-                let delay = min(maxDelay, baseDelay * pow(2, Double(attempt - 1)))
+                let backoffDelay = min(maxDelay, baseDelay * pow(2, Double(attempt - 1)))
+                let retryAfterDelay = (error as? GoogleDriveError)?.retryAfterDelay
+                let jitter = TimeInterval.random(in: 0...1)
+                let delay = min(maxDelay, max(backoffDelay, retryAfterDelay ?? 0) + jitter)
                 AppLogger.info("Retry attempt \(attempt + 1) in \(String(format: "%.1f", delay))s after error: \(error.localizedDescription)")
                 try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                 attempt += 1
