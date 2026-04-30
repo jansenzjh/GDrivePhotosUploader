@@ -8,9 +8,15 @@ I also did not want to sign in to my Google account from a random App Store app 
 
 Important: this app does not remove, replace, or manage anything in Google Photos. If you use both Google Photos backup and this app, the same image/video can exist twice in Google’s ecosystem: once in Google Photos and once as a traditional file in Google Drive.
 
-This is a personal iPhone app for manually uploading Photos Library images and videos to Google Drive. This version is a manual catch-up sync: open the app, sign in, grant Photos access, choose the earliest creation date to sync from, tap Sync, and keep the app open while it uploads missing assets.
+This is a personal iPhone app for manually uploading Photos Library images and videos to Google Drive. This version is a manual catch-up sync: open the app, sign in, grant Photos access, choose the earliest creation date to sync from, choose an upload thread count if you want more throughput, tap Sync, and keep the app open while it uploads missing assets.
 
-The app also includes a Settings tab with an app log viewer for troubleshooting sync, upload, and duplicate-detection behavior.
+The app also includes a Settings tab with upload performance controls and a warning/error log viewer for troubleshooting sync, upload, and duplicate-detection behavior.
+
+## Screenshots
+
+| Sync | Settings |
+| --- | --- |
+| ![Sync screen showing upload progress and per-thread status](Screenshot%202026-04-30%20at%2016.33.45.png) | ![Settings screen showing upload thread and log controls](Screenshot%202026-04-30%20at%2016.34.11.png) |
 
 Uploaded files are organized in Google Drive as:
 
@@ -87,9 +93,12 @@ Do not commit real credentials if you later publish this repository. The OAuth c
 6. Sign in with Google.
 7. Grant Photos access.
 8. Pick the **Sync photos after** date.
-9. Tap **Sync**.
+9. Optionally open **Settings** and choose **Upload Threads** from 1 to 10. Higher values can upload faster, but use more battery, network, memory, and Photos export resources.
+10. Tap **Sync**.
 
 During the initial Photos scan, the app shows a loading overlay while the scan runs off the main UI actor. Large libraries can still take time, but the screen should not appear frozen.
+
+During upload, the Sync screen shows the overall progress counts first, then a per-thread progress section so you can see what each active upload worker is doing.
 
 ## Testing With a Small Photo Set
 
@@ -106,6 +115,9 @@ Use limited Photos access first:
 
 - The app requests the Drive scope `https://www.googleapis.com/auth/drive.file`.
 - `drive.file` is intentionally narrow. The app can manage files it creates or files opened/authorized through the app, not the entire Drive.
+- Upload concurrency is configurable from 1 to 10 threads in Settings. The selected value is saved locally and reused on later launches.
+- Google Drive API requests are paced through a shared client-side limiter of 8 requests per second to reduce bursty traffic from concurrent uploads.
+- Google Drive `429`, `408`, and `5xx` responses are retryable with exponential backoff, `Retry-After` support, and small jitter between retries.
 - Large files use a resumable upload session, but v1 uploads the file in one PUT request after creating the session. The code is structured so chunked/background resumable upload can be improved later.
 - Sync is manual and foreground-first. iOS can suspend or kill apps in the background, so v1 does not claim perfect background auto-sync.
 - If the app is killed mid-upload, incomplete files are not marked uploaded locally. The next manual sync retries missing assets.
@@ -114,13 +126,14 @@ Use limited Photos access first:
 
 ## Logs
 
-The app writes logs to a local file in Application Support and mirrors important messages to Apple's unified logging system.
+The app writes a full local log to Application Support and mirrors important messages to Apple's unified logging system. It also writes warnings and errors to a smaller review log used by the in-app viewer.
 
-Open **Settings** -> **View App Log** to:
+Open **Settings** -> **View Warnings & Errors** to:
 
-- Review sync, Photos permission, folder creation/reuse, upload, retry, and duplicate warning events.
-- Copy the full log to the clipboard for deeper investigation.
-- Clear the log after confirmation when it is no longer needed.
+- Review warning and error events without loading the larger info/debug log.
+- Copy the warning/error log to the clipboard for deeper investigation.
+
+Use **Settings** -> **Clear App Log** to clear both the full log and the warning/error review log before opening the viewer.
 
 Clearing logs does not delete upload records or any files in Google Drive.
 
