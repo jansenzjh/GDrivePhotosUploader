@@ -16,7 +16,7 @@ The app also includes a Settings tab with upload performance controls and a warn
 
 | Sync | Settings |
 | --- | --- |
-| ![Sync screen showing upload progress and per-thread status](Screenshot%202026-04-30%20at%2016.33.45.png) | ![Settings screen showing upload thread and log controls](Screenshot%202026-04-30%20at%2016.34.11.png) |
+| ![Sync screen showing upload progress and per-thread status](screenshots/sync-progress.png) | ![Settings screen showing upload thread and log controls](screenshots/settings.png) |
 
 Uploaded files are organized in Google Drive as:
 
